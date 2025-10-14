@@ -32,9 +32,7 @@ to setup
 end
 
 to setup-environment
-  print "--- STARTING setup-environment ---"
   
-  print "COMMAND: Create GRAY cone at x = -20"
   create-cones 1 [
     setxy -20 0
     set shape "circle"
@@ -42,10 +40,8 @@ to setup-environment
     set size 2
     set label "1"
     set line1-cone self
-    print (word "  -> RESULT: Created cone " who " at xcor " xcor)
   ]
   
-  print "COMMAND: Create PINK cone at x = 20"
   create-cones 1 [
     setxy 20 0
     set shape "circle"
@@ -53,10 +49,8 @@ to setup-environment
     set size 2
     set label "2"
     set line2-cone self
-    print (word "  -> RESULT: Created cone " who " at xcor " xcor)
   ]
-
-  print "--- FINISHED setup-environment ---"
+  
   set catch-point (list ([xcor] of line1-cone) ([ycor] of line1-cone + 15))
 end
 
@@ -74,7 +68,7 @@ to setup-players
     set speed 0.5
   ]
   
-  ; This block correctly calculates each agent's unique position
+  ; This block calculates each agent's unique position
   ; and moves it there one-by-one, preventing the setup clump.
   ask players [
     form-line
@@ -118,19 +112,31 @@ to update-state ; player procedure
 end
 
 to perform-action ; player procedure
-  ; The thrower (line 1) is solely responsible for initiating the action.
-  ; This prevents deadlocks and race conditions.
-  if state = "preparing-to-act" and line-id = 1 [
-    let potential-cutter front-player-of 2
-    ; Check if a cutter exists, is ready, and is in position.
-    if potential-cutter != nobody and [state] of potential-cutter = "preparing-to-act" and [distance line2-cone] of potential-cutter < 1 [
-      ; If conditions are met, command both agents to change state simultaneously.
-      set state "throwing"
-      ask potential-cutter [ set state "cutting" ]
+  ; --- STATE TRANSITION LOGIC ---
+  
+  if state = "preparing-to-act" [
+    ; CUTTER'S INITIATIVE: If I'm a cutter, the thrower is ready, AND no one else is cutting...
+    if line-id = 2 [
+      let potential-thrower front-player-of 1
+      ; THE FIX IS HERE: Add a check to ensure no other cuts are in progress.
+      if potential-thrower != nobody and [state] of potential-thrower = "preparing-to-act" and count players with [state = "cutting"] = 0 [
+        set state "cutting"
+      ]
+    ]
+
+    ; THROWER'S TIMING: If I'm a thrower, I will wait for a cutter to be in the throwing window.
+    if line-id = 1 [
+      let current-cutter one-of players with [state = "cutting"]
+      if current-cutter != nobody [
+        if [distancexy item 0 catch-point item 1 catch-point] of current-cutter < 3 [
+          set state "throwing"
+        ]
+      ]
     ]
   ]
 
-  ; This logic runs AFTER the state has been set above.
+  ; --- ACTION EXECUTION LOGIC ---
+
   if state = "throwing" [
     hatch-discs 1 [
       set color yellow
@@ -151,10 +157,10 @@ to perform-action ; player procedure
 end
 
 to move-agent ; player procedure
-  ; Set the destination based on the current state
+  ; Set the destination based on the current state. This runs every tick.
   if state = "waiting-in-line" or state = "preparing-to-act" [ form-line ]
   if state = "cutting" [ set target-pos catch-point ]
-  if state = "returning-to-line" [ set target-pos back-of-line-spot-for line-id ]
+  if state = "returning-to-line" [ form-line ] ;set target-pos back-of-line-spot-for line-id
   
   ; Move towards that destination
   move-towards-target
@@ -208,17 +214,22 @@ to-report front-player-of [l-id]
   report nobody
 end
 
+; Applied to a player agent
 to-report back-of-line-spot-for [l-id]
   let my-cone ifelse-value (l-id = 1) [line1-cone] [line2-cone]
-  let relevant-players players with [line-id = l-id]
+  ;; Ensures that back of line isn't corrupted by player changing lines
+  let relevant-players players with [line-id = l-id] with [self != myself]
+  ; Check if target line has players
   if any? relevant-players [
+    ; If so report spot just behind last player
     let last-player max-one-of relevant-players [distance my-cone]
     report (list ([xcor] of last-player) ([ycor] of last-player - 1.5))
   ]
-  report (list ([xcor] of my-cone) ([ycor] of my-cone))
+  ; Otherwise report the cone
+  report (list ([xcor] of my-cone) ([ycor] of my-cone - 3))
 end]]></code>
   <widgets>
-    <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="668" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="798" tickCounterLabel="ticks" maxPycor="25" updateMode="0" maxPxcor="30" minPxcor="-30"></view>
+    <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="668" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="798" tickCounterLabel="ticks" maxPycor="25" updateMode="1" maxPxcor="30" minPxcor="-30"></view>
     <button x="290" y="100" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="55">go</button>
     <button x="295" y="30" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">setup</button>
     <slider x="5" step=".1" y="15" max="3" width="250" display="runner-speed" height="50" min=".1" direction="Horizontal" default="1.2" variable="runner-speed"></slider>
