@@ -21,7 +21,11 @@ players-own [
 globals [
   line1-cone
   line2-cone
-  catch-point
+  line3-cone
+  line4-cone
+  catch-point ; TEMPORARY
+  catch-point-left
+  catch-point-right
 ]
 
 ; --- SETUP PROCEDURE ---
@@ -34,6 +38,8 @@ end
 
 to setup-environment
   
+  let center-line-offset 2
+  
   create-cones 1 [
     setxy (-1 * line-spacing) 0
     set shape "circle"
@@ -44,7 +50,7 @@ to setup-environment
   ]
   
   create-cones 1 [
-    setxy line-spacing 0
+    setxy (-1 * center-line-offset) 0
     set shape "circle"
     set color pink
     set size 2
@@ -52,23 +58,63 @@ to setup-environment
     set line2-cone self
   ]
   
+  create-cones 1 [
+    setxy center-line-offset 0
+    set shape "circle"
+    set color pink
+    set size 2
+    set label "3"
+    set line3-cone self
+  ]
+  
+  create-cones 1 [
+    setxy line-spacing 0
+    set shape "circle"
+    set color gray
+    set size 2
+    set label "4"
+    set line4-cone self
+  ]
+  
   let CUTTING-ANGLE 30
   ; xcor = xcor of cone
   ; ycor = point above cone that creates a triangle
   ; CUTTING-ANGLE degree angle between line from cutter-cone to thrower-cone and from cutter-cone to catch-point
-  set catch-point (list ([xcor] of line1-cone) ((([xcor] of line1-cone) - ([xcor] of line2-cone)) * (-(sin(CUTTING-ANGLE)))))
+  set catch-point (list ([xcor] of line1-cone) ((([xcor] of line1-cone) - ([xcor] of line2-cone)) * (-1 * sin(CUTTING-ANGLE))))
+  
+  ; set catch-point-right (list ([xcor] of line4-cone) ((([xcor] of line4-cone) - ([xcor] of line3-cone)) * (sin(CUTTING-ANGLE))))
 end
 
 to setup-players
+  
+  ; Line 1
   create-players num-per-line [
     set line-id 1
     set color blue
     set state "waiting-in-line"
     set speed walk-speed
   ]
+  
+  ; Line 2
   create-players num-per-line [
     set line-id 2
     set color red
+    set state "waiting-in-line"
+    set speed walk-speed
+  ]
+  
+  ; Line 3
+  create-players num-per-line [
+    set line-id 3
+    set color red
+    set state "waiting-in-line"
+    set speed walk-speed
+  ]
+  
+  ; Line 4
+  create-players num-per-line [
+    set line-id 4
+    set color blue
     set state "waiting-in-line"
     set speed walk-speed
   ]
@@ -89,7 +135,6 @@ to go
   
   ask players [
     update-state
-    perform-action
     move-agent
   ]
   
@@ -100,6 +145,9 @@ end
 ; --- PLAYER LOGIC PROCEDURES ---
 
 to update-state ; player procedure
+  
+  ; --- STATE TRANSITION LOGIC ---
+  
   ; Rule for becoming the "front" player
   if state = "waiting-in-line" [
     let front-player front-player-of line-id
@@ -114,10 +162,6 @@ to update-state ; player procedure
       set state "waiting-in-line"
     ]
   ]
-end
-
-to perform-action ; player procedure
-  ; --- STATE TRANSITION LOGIC ---
   
   if state = "preparing-to-act" [
     ; CUTTER'S INITIATIVE: If I'm a cutter, the thrower is ready, AND no one else is cutting...
@@ -216,12 +260,14 @@ to form-line ; player procedure (Self-Correction)
   let PLAYER-LINE-OFFSET 1.5
 
   let my-line-mates players with [line-id = [line-id] of myself] with [state != "returning-to-line"]
-  let my-cone ifelse-value (line-id = 1) [line1-cone] [line2-cone]
+  
+  
+  let my-cone get-cone line-id
   
   
   ; Temporary fix for weird bug with line-1 cone
   let cone-y 0
-  ifelse my-cone = line1-cone [ set cone-y [ycor] of my-cone - PLAYER-LINE-OFFSET ] [ set cone-y [ycor] of my-cone ]
+  ifelse my-cone = line2-cone [ set cone-y [ycor] of my-cone ] [ set cone-y [ycor] of my-cone - PLAYER-LINE-OFFSET ]
   
   
   ; Robustly sort the line to find the agent's rank.
@@ -241,7 +287,7 @@ to form-line ; player procedure (Self-Correction)
 end
 
 to set-state-color ; player procedure
-  if state = "waiting-in-line"   [ set color ifelse-value (line-id = 1) [blue][red] ]
+  if state = "waiting-in-line"   [ set color ifelse-value (line-id = 1 or line-id = 4) [blue][red] ]
   if state = "preparing-to-act" [ set color green ]
   if state = "throwing"           [ set color orange ]
   if state = "cutting"            [ set color orange ]
@@ -263,18 +309,34 @@ end
 ; --- REPORTERS (Functions) ---
 
 to-report front-player-of [l-id]
-  let my-cone ifelse-value (l-id = 1) [line1-cone] [line2-cone]
+  
+  ; Find which cone the player is supposed to be at
+  let my-cone get-cone l-id
+  
+  
+  ; Filter agents to those waiting in the target line
   let relevant-players players with [line-id = l-id and (state = "waiting-in-line" or state = "preparing-to-act")]
+  ; Report player closest to cone
   if any? relevant-players [ report min-one-of relevant-players [distance my-cone] ]
   report nobody
 end
-]]></code>
+
+to-report get-cone [l-id]
+  ; Find which cone the player is supposed to be at
+  let my-cone random 4
+  (ifelse 
+  l-id = 1 [report line1-cone]
+  l-id = 2 [report line2-cone]
+  l-id = 3 [report line3-cone]
+  [report line4-cone]
+    )
+end]]></code>
   <widgets>
     <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="668" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="798" tickCounterLabel="ticks" maxPycor="25" updateMode="1" maxPxcor="30" minPxcor="-30"></view>
     <slider x="0" step="1" y="310" max="30" width="250" display="line-spacing" height="50" min="1" direction="Horizontal" default="15.0" variable="line-spacing"></slider>
     <slider x="0" step=".1" y="250" max="10" width="250" display="disc-speed" height="50" min=".5" direction="Horizontal" default="3.0" variable="disc-speed"></slider>
-    <slider x="0" step=".1" y="195" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="0.2" variable="walk-speed"></slider>
-    <slider x="0" step=".1" y="140" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="2.6" variable="run-speed"></slider>
+    <slider x="0" step=".1" y="195" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="0.8" variable="walk-speed"></slider>
+    <slider x="0" step=".1" y="140" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="1.5" variable="run-speed"></slider>
     <slider x="0" step="1" y="80" max="10" width="250" display="num-per-line" height="50" min="2" direction="Horizontal" default="7.0" variable="num-per-line"></slider>
     <button x="160" y="20" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="55">go</button>
     <button x="30" y="20" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">setup</button>
