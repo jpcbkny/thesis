@@ -16,6 +16,13 @@ players-own [
   target-pos     ; A vector [x y] for the agent's destination
 ]
 
+; --- DISC VARIABLES ---
+discs-own [
+  speed          ; How fast the disc moves
+]
+
+
+
 ; --- GLOBAL VARIABLES ---
 globals [
   line1-cone
@@ -125,6 +132,7 @@ to perform-action ; player procedure
       ; THE FIX IS HERE: Add a check to ensure no other cuts are in progress.
       if potential-thrower != nobody and [state] of potential-thrower = "preparing-to-act" and count players with [state = "cutting"] = 0 [
         set state "cutting"
+        set speed 1 ; Speed increases to simulate running
       ]
     ]
 
@@ -154,6 +162,7 @@ to perform-action ; player procedure
     hatch-discs 1 [
       set color yellow
       set heading towardsxy item 0 catch-point item 1 catch-point
+      set speed 1.5
       ; FOR 4-LINE: Check for specific line cutter comes from
       ; Create link between player and disc immediately
       ; Ensures a disc is only created once per cutter
@@ -170,6 +179,7 @@ to perform-action ; player procedure
       if frisbee != nobody [ ask frisbee [ die ] ]
       set line-id 1
       set state "returning-to-line"
+      set speed 0.5
     ]
   ]
 end
@@ -201,19 +211,24 @@ end
 
 to form-line ; player procedure (Self-Correction)
   
+  ; Sets players target position to their correct position in line
+  ; Spaces players evenly
+  
   ;
   ; Players with a certain line-id are either in the line or returning to it
   ; Line formation should be done without respect to the player returning to their line
   ; However, the player returning to their line should respect the order of the line they are returning to
   ;
   
+  let PLAYER-LINE-OFFSET 1.5
+
   let my-line-mates players with [line-id = [line-id] of myself] with [state != "returning-to-line"]
   let my-cone ifelse-value (line-id = 1) [line1-cone] [line2-cone]
   
   
   ; Temporary fix for weird bug with line-1 cone
   let cone-y 0
-  ifelse my-cone = line1-cone [ set cone-y [ycor] of my-cone - 1.5 ] [ set cone-y [ycor] of my-cone ]
+  ifelse my-cone = line1-cone [ set cone-y [ycor] of my-cone - PLAYER-LINE-OFFSET ] [ set cone-y [ycor] of my-cone ]
   
   
   ; Robustly sort the line to find the agent's rank.
@@ -222,11 +237,11 @@ to form-line ; player procedure (Self-Correction)
   
   ifelse member? self sorted-line [
     let my-rank position self sorted-line
-    set target-pos (list ([xcor] of my-cone) (cone-y - (my-rank * 1.5)))
+    set target-pos (list ([xcor] of my-cone) (cone-y - (my-rank * PLAYER-LINE-OFFSET)))
   ] [
     ; Set target position to be behind last person in line
     let back-of-line-rank count my-line-mates
-    set target-pos (list ([xcor] of my-cone) (cone-y - (back-of-line-rank * 1.5)))
+    set target-pos (list ([xcor] of my-cone) (cone-y - (back-of-line-rank * PLAYER-LINE-OFFSET)))
   ]
   
   
@@ -241,7 +256,7 @@ to set-state-color ; player procedure
 end
 
 to fly ; disc procedure
-  fd 1.5
+  fd speed
 
   let this-disc self
   
