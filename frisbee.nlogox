@@ -25,9 +25,12 @@ globals [
   line2-cone
   line3-cone
   line4-cone
+  
   catch-point ; TEMPORARY
   catch-point-left
   catch-point-right
+  
+  disc-thrown?
 ]
 
 ; --- SETUP PROCEDURE ---
@@ -44,18 +47,18 @@ to setup-environment
   
   create-cones 1 [
     setxy (-1 * line-spacing) 0
-    set shape "circle"
+    set shape "x"
     set color gray
-    set size 2
+    set size 1.5
     set label "1"
     set line1-cone self
   ]
   
   create-cones 1 [
     setxy (-1 * center-line-offset) 0
-    set shape "circle"
+    set shape "x"
     set color pink
-    set size 2
+    set size 1.5
     set label "2"
     set line2-cone self
   ]
@@ -67,6 +70,9 @@ to setup-environment
   set catch-point (list ([xcor] of line1-cone) ((([xcor] of line1-cone) - ([xcor] of line2-cone)) * (-1 * sin(CUTTING-ANGLE))))
   
   ; set catch-point-right (list ([xcor] of line4-cone) ((([xcor] of line4-cone) - ([xcor] of line3-cone)) * (sin(CUTTING-ANGLE))))
+  
+  set disc-thrown? false
+  
 end
 
 to setup-players
@@ -76,7 +82,7 @@ to setup-players
     set line-id 1
     set color blue
     set state "waiting-in-line"
-    set shape "person"
+    ; set shape "person"
     
     set player-walk-speed walk-speed + random-float walk-speed-variance - (walk-speed-variance / 2)
     set player-run-speed run-speed + random-float run-speed-variance - (run-speed-variance / 2)
@@ -89,7 +95,7 @@ to setup-players
     set line-id 2
     set color red
     set state "waiting-in-line"
-    set shape "person"
+    ; set shape "person"
     
     set player-walk-speed walk-speed + random-float walk-speed-variance - (walk-speed-variance / 2)
     set player-run-speed run-speed + random-float run-speed-variance - (run-speed-variance / 2)
@@ -118,7 +124,13 @@ to go
   ]
   
   ask discs [ fly ]
-  tick
+  
+  ; We use disc throws as the unit of time to better compare it to the real drill
+  if disc-thrown? [
+    tick
+    set disc-thrown? false
+  ]
+
 end
 
 ; --- PLAYER LOGIC PROCEDURES ---
@@ -187,6 +199,9 @@ to update-state ; player procedure
     
     set line-id 2
     set state "returning-to-line"
+    
+    ; Creates a flag that says a disc was thrown this tick
+    set disc-thrown? true
   ]
   
   if state = "cutting" [
@@ -311,17 +326,17 @@ to-report get-cone [l-id]
     )
 end]]></code>
   <widgets>
-    <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="667" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="797" maxPycor="25" updateMode="1" maxPxcor="30" minPxcor="-30"></view>
+    <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="667" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="797" tickCounterLabel="ticks" maxPycor="25" updateMode="0" maxPxcor="30" minPxcor="-30"></view>
     <slider x="0" step="1" y="310" max="30" width="250" display="line-spacing" height="50" min="1" direction="Horizontal" default="15.0" variable="line-spacing"></slider>
     <slider x="0" step=".1" y="250" max="10" width="250" display="disc-speed" height="50" min=".5" direction="Horizontal" default="3.0" variable="disc-speed"></slider>
     <slider x="0" step=".1" y="195" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="0.8" variable="walk-speed"></slider>
     <slider x="0" step=".1" y="140" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="1.6" variable="run-speed"></slider>
-    <slider x="0" step="1" y="80" max="10" width="250" display="num-per-line" height="50" min="2" direction="Horizontal" default="9.0" variable="num-per-line"></slider>
+    <slider x="0" step="1" y="80" max="10" width="250" display="num-per-line" height="50" min="2" direction="Horizontal" default="4.0" variable="num-per-line"></slider>
     <button x="160" y="20" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="55">go</button>
     <button x="30" y="20" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">setup</button>
-    <slider x="0" step=".01" y="370" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.36" variable="run-speed-variance"></slider>
-    <slider x="0" step=".01" y="430" max="3" width="250" display="walk-speed-variance" height="50" min="0" direction="Horizontal" default="1.21" variable="walk-speed-variance"></slider>
-    <plot x="5" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Number of Players" y="475" xMin="0.0" height="215" legend="true" xMax="10.0" yMin="0.0" xAxis="Ticks" display="Player Lines" width="335" sizeVersion="0">
+    <slider x="0" step=".01" y="370" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.05" variable="run-speed-variance"></slider>
+    <slider x="0" step=".01" y="430" max="3" width="250" display="walk-speed-variance" height="50" min="0" direction="Horizontal" default="0.0" variable="walk-speed-variance"></slider>
+    <plot x="5" autoPlotX="false" yMax="10.0" autoPlotY="true" yAxis="Number of Players" y="475" xMin="0.0" height="215" legend="true" xMax="60.0" yMin="0.0" xAxis="Ticks" display="Player Lines" width="335" sizeVersion="0">
       <setup></setup>
       <update></update>
       <pen interval="1.0" mode="0" display="Throwing" color="-14070903" legend="true">
