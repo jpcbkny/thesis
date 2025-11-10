@@ -48,7 +48,7 @@ to setup-environment
   create-cones 1 [
     setxy (-1 * line-spacing) 0
     set shape "x"
-    set color gray
+    set color green
     set size 1.5
     set label "1"
     set line1-cone self
@@ -131,7 +131,10 @@ to go
     set disc-thrown? false
   ]
   
-  if ticks >= max-throws [stop]
+  if ticks >= max-throws [
+    export-plot "Player-Distribution.csv"
+    stop
+  ]
 
 end
 
@@ -345,7 +348,7 @@ end]]></code>
     <slider x="0" step="1" y="15" max="10" width="250" display="num-per-line" height="50" min="2" direction="Horizontal" default="4.0" variable="num-per-line"></slider>
     <slider x="0" step=".1" y="70" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="1.6" variable="run-speed"></slider>
     <slider x="0" step=".1" y="125" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="0.8" variable="walk-speed"></slider>
-    <slider x="0" step=".01" y="180" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.05" variable="run-speed-variance"></slider>
+    <slider x="0" step=".01" y="180" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.08" variable="run-speed-variance"></slider>
     <slider x="0" step=".1" y="235" max="10" width="250" display="disc-speed" height="50" min=".5" direction="Horizontal" default="3.0" variable="disc-speed"></slider>
     <slider x="0" step=".01" y="290" max="3" width="250" display="walk-speed-variance" height="50" min="0" direction="Horizontal" default="0.0" variable="walk-speed-variance"></slider>
     <slider x="0" step="1" y="345" max="30" width="250" display="line-spacing" height="50" min="1" direction="Horizontal" default="15.0" variable="line-spacing"></slider>
