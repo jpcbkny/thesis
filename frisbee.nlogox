@@ -32,11 +32,8 @@ globals [
   catch-point-left
   catch-point-right
   
-  left-disc-thrown?
-  left-disc-caught?
-  
-  right-disc-thrown?
-  right-disc-caught?
+  disc-thrown?
+  disc-caught?
   
   
   left-throws
@@ -106,10 +103,8 @@ to setup-environment
   
   set catch-point-right (list ([xcor] of line4-cone) ((([xcor] of line4-cone) - ([xcor] of line3-cone)) * (sin(CUTTING-ANGLE))))
   
-  set left-disc-thrown? false
-  set left-disc-caught? false
-  set right-disc-thrown? false
-  set right-disc-caught? false
+  set disc-thrown? false
+  set disc-caught? false
   
 end
 
@@ -198,13 +193,8 @@ to go
   ; We use disc throws as the unit of time to better compare it to the real drill
   ; We wait until the disc was caught to ensure we look at player lines after both the thrower and catcher have officially switched lines
   
-  if left-disc-caught? [
-    set left-disc-caught? false
-    tick
-  ]
-  
-  if right-disc-caught? [
-    set right-disc-caught? false
+  if disc-caught? [
+    set disc-caught? false
     tick
   ]
   
@@ -286,9 +276,7 @@ to update-state ; player procedure
   ; Logic for THROWING FRISBEE
   if state = "throwing" [
     
-    ifelse line-id = 1
-    [set left-disc-thrown? true]
-    [set right-disc-thrown? true]
+    set disc-thrown? true
     
     let player-line-id line-id
     let player-catch-point (get-catch-point line-id)
@@ -319,16 +307,10 @@ to update-state ; player procedure
     ; Logic for CATCHING FRISBEE
     ; RULE: You cannot catch the frisbee until it has been thrown
     
-    let correct-disc-thrown? false 
-    ifelse (line-id = 2) [set correct-disc-thrown? left-disc-thrown?] [set correct-disc-thrown? right-disc-thrown?]
-    
-    if distancexy item 0 player-catch-point item 1 player-catch-point < 1 and correct-disc-thrown? [
+    if distancexy item 0 player-catch-point item 1 player-catch-point < 1 and disc-thrown? [
       
-      ifelse line-id = 2 
-      [set left-disc-thrown? false
-      set left-disc-caught? true]
-      [set left-disc-thrown? false
-      set left-disc-caught? true]
+      set disc-caught? true
+      set disc-thrown? false
       set throwable? false ; Error correction, should never be throwable when not cutting
       
       let frisbee one-of (discs in-radius 1)
