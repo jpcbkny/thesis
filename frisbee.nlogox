@@ -29,8 +29,9 @@ globals [
   line3-cone
   line4-cone
   
-  ; Holds left and right values
-  catch-point
+  catch-point-left
+  catch-point-right
+  
   disc-thrown?
   disc-caught?
   
@@ -98,31 +99,12 @@ to setup-environment
   ; xcor = xcor of cone
   ; ycor = point above cone that creates a triangle
   ; CUTTING-ANGLE degree angle between line from cutter-cone to thrower-cone and from cutter-cone to catch-point
+  set catch-point-left (list ([xcor] of line1-cone) ((([xcor] of line1-cone) - ([xcor] of line2-cone)) * (-1 * sin(CUTTING-ANGLE))))
   
-  ; Keeps left and right globals together, makes catch-point --> {"left" ; left-catch-point, "right" : right-catch-point}
+  set catch-point-right (list ([xcor] of line4-cone) ((([xcor] of line4-cone) - ([xcor] of line3-cone)) * (sin(CUTTING-ANGLE))))
   
-  set catch-point [
-    ["left" (list ([xcor] of line1-cone) ((([xcor] of line1-cone) - ([xcor] of line2-cone)) * (-1 * sin(CUTTING-ANGLE))))]
-    ["right" (list ([xcor] of line4-cone) ((([xcor] of line4-cone) - ([xcor] of line3-cone)) * (sin(CUTTING-ANGLE))))]
-  ]
-  
-  set disc-thrown? [
-    ["left" false]
-    ["right" false]
-  ]
-  
-   set disc-caught? [
-    ["left" false]
-    ["right" false]
-  ]
-  
-  set disc-caught? []
-  set disc-caught? set-value disc-caught? "left" false
-  set disc-caught? set-value disc-caught? "right" false
-  
-  show catch-point
-  show disc-thrown?
-  show disc-caught?
+  set disc-thrown? false
+  set disc-caught? false
   
 end
 
@@ -211,13 +193,8 @@ to go
   ; We use disc throws as the unit of time to better compare it to the real drill
   ; We wait until the disc was caught to ensure we look at player lines after both the thrower and catcher have officially switched lines
   
-  if get-value disc-caught? "left" [
-    set disc-caught? set-value disc-caught? "left" false
-    tick
-  ]
-  
-  if get-value disc-caught? "right" [
-    set disc-caught? set-value disc-caught? "right" false
+  if disc-caught? [
+    set disc-caught? false
     tick
   ]
   
@@ -330,9 +307,6 @@ to update-state ; player procedure
     ; Logic for CATCHING FRISBEE
     ; RULE: You cannot catch the frisbee until it has been thrown
     
-    
-    ; KNOWN BUG: disc-thrown can be changed by either line so one line's thrown can cause cutter to linger in their line for awhile
-    ; Need to add separate throw and catch variables for each line
     if distancexy item 0 player-catch-point item 1 player-catch-point < 1 and disc-thrown? [
       
       set disc-caught? true
@@ -494,39 +468,20 @@ to-report get-catch-point [l-id]
   ; Find which catch-point the cutter should be targeting
   ; Maybe make this embedded in the player itself later?
   (ifelse
-    line-id = 1 or l-id = 2 [report get-value catch-point "left"]
-    [report get-value catch-point "right"]
+    line-id = 1 or l-id = 2 [report catch-point-left]
+    [report catch-point-right]
     )
-end
-
-to-report get-value [dict key]
-  foreach dict [pair ->
-    ifelse (first pair) = key [report last pair][show first pair]
-  ]
-  report -1
-end
-
-to-report set-value [dict key value]
-  show "IM CALLED"
-  let tmp []
-  foreach dict [pair ->
-    ifelse first pair = key 
-    [set tmp lput (list key value) tmp] ; If correct key is found, add the new pair
-    [set tmp lput pair tmp] ; Keep same pair otherwise
-    show tmp
-  ]
-  report tmp
 end]]></code>
   <widgets>
     <view x="368" wrappingAllowedX="false" y="10" frameRate="30.0" minPycor="-25" height="667" showTickCounter="true" patchSize="13.0" fontSize="10" wrappingAllowedY="false" width="797" tickCounterLabel="ticks" maxPycor="25" updateMode="0" maxPxcor="30" minPxcor="-30"></view>
     <button x="285" y="40" height="40" disableUntilTicks="false" forever="false" kind="Observer" width="55">setup</button>
     <slider x="0" step="1" y="15" max="10" width="250" display="num-per-line" height="50" min="2" direction="Horizontal" default="8.0" variable="num-per-line"></slider>
-    <slider x="0" step=".1" y="70" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="2.6" variable="run-speed"></slider>
-    <slider x="0" step=".1" y="125" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="1.1" variable="walk-speed"></slider>
-    <slider x="0" step=".01" y="180" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="2.12" variable="run-speed-variance"></slider>
-    <slider x="0" step=".1" y="235" max="10" width="250" display="disc-speed" height="50" min=".5" direction="Horizontal" default="1.3" variable="disc-speed"></slider>
-    <slider x="0" step=".01" y="290" max="3" width="250" display="walk-speed-variance" height="50" min="0" direction="Horizontal" default="0.96" variable="walk-speed-variance"></slider>
-    <slider x="0" step="1" y="345" max="30" width="250" display="line-spacing" height="50" min="1" direction="Horizontal" default="25.0" variable="line-spacing"></slider>
+    <slider x="0" step=".1" y="70" max="3" width="250" display="run-speed" height="50" min=".1" direction="Horizontal" default="2.2" variable="run-speed"></slider>
+    <slider x="0" step=".1" y="125" max="2" width="250" display="walk-speed" height="50" min=".1" direction="Horizontal" default="0.9" variable="walk-speed"></slider>
+    <slider x="0" step=".01" y="180" max="3" width="250" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.0" variable="run-speed-variance"></slider>
+    <slider x="0" step=".1" y="235" max="10" width="250" display="disc-speed" height="50" min=".5" direction="Horizontal" default="3.5" variable="disc-speed"></slider>
+    <slider x="0" step=".01" y="290" max="3" width="250" display="walk-speed-variance" height="50" min="0" direction="Horizontal" default="0.0" variable="walk-speed-variance"></slider>
+    <slider x="0" step="1" y="345" max="30" width="250" display="line-spacing" height="50" min="1" direction="Horizontal" default="15.0" variable="line-spacing"></slider>
     <slider x="0" step="5" y="400" max="1000" width="250" display="max-throws" height="50" min="0" direction="Horizontal" default="1000.0" variable="max-throws"></slider>
     <button x="285" y="110" height="40" disableUntilTicks="false" forever="true" kind="Observer" width="55">go</button>
     <plot x="0" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Number of Players" y="465" xMin="0.0" height="215" legend="true" xMax="10.0" yMin="0.0" xAxis="Ticks" display="Player Lines" width="335" sizeVersion="0">
