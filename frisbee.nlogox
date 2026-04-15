@@ -581,7 +581,7 @@ end]]></code>
     <slider x="5" step="1" y="170" max="60" width="170" display="line-spacing" height="50" min="1" direction="Horizontal" default="35.0" variable="line-spacing"></slider>
     <slider x="5" step=".1" y="115" max="10" width="170" display="disc-speed" height="50" min=".5" direction="Horizontal" default="2.3" variable="disc-speed"></slider>
     <slider x="5" step=".1" y="60" max="2" width="170" display="walk-speed" height="50" min=".1" direction="Horizontal" default="1.1" variable="walk-speed"></slider>
-    <slider x="180" step=".01" y="5" max="3" width="170" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="1.65" variable="run-speed-variance"></slider>
+    <slider x="180" step=".01" y="5" max="3" width="170" display="run-speed-variance" height="50" min="0" direction="Horizontal" default="0.27" variable="run-speed-variance"></slider>
     <plot x="5" autoPlotX="true" yMax="10.0" autoPlotY="true" yAxis="Num Players" y="230" xMin="0.0" height="175" legend="false" xMax="10.0" yMin="0.0" width="210" xAxis="Ticks" display="Line 1">
       <setup></setup>
       <update></update>
@@ -612,18 +612,6 @@ end]]></code>
       <pen interval="1.0" mode="0" display="default" color="-16777216" legend="true">
         <setup></setup>
         <update>plot count players with [line-id = 2]</update>
-      </pen>
-    </plot>
-    <plot x="45" autoPlotX="true" yMax="10.0" autoPlotY="true" y="590" xMin="0.0" height="175" legend="false" xMax="10.0" yMin="0.0" width="335" display="Ticks per Throw">
-      <setup></setup>
-      <update></update>
-      <pen interval="1.0" mode="0" display="Left" color="-1184463" legend="true">
-        <setup></setup>
-        <update></update>
-      </pen>
-      <pen interval="1.0" mode="0" display="Right" color="-13345367" legend="true">
-        <setup></setup>
-        <update></update>
       </pen>
     </plot>
   </widgets>
